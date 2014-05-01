@@ -1,4 +1,4 @@
-/* $OpenBSD: signify.c,v 1.50 2014/03/07 19:53:33 tedu Exp $ */
+/* $OpenBSD: signify.c,v 1.72 2014/04/22 21:24:20 tedu Exp $ */
 /*
  * Copyright (c) 2013 Ted Unangst <tedu@openbsd.org>
  *
@@ -43,6 +43,7 @@
 #define COMMENTHDR "untrusted comment: "
 #define COMMENTHDRLEN 19
 #define COMMENTMAXLEN 1024
+#define VERIFYWITH "verify with "
 
 struct enckey {
 	uint8_t pkalg[2];
@@ -86,23 +87,26 @@ usage(const char *error)
 }
 
 static int
-xopen(const char *fname, int flags, mode_t mode)
+xopen(const char *fname, int oflags, mode_t mode)
 {
+	struct stat sb;
 	int fd;
 
 	if (strcmp(fname, "-") == 0) {
-		if ((flags & O_WRONLY))
+		if ((oflags & O_WRONLY))
 			fd = dup(STDOUT_FILENO);
 		else
 			fd = dup(STDIN_FILENO);
 		if (fd == -1)
 			err(1, "dup failed");
 	} else {
-		fd = open(fname, flags, mode);
+		fd = open(fname, oflags, mode);
 		if (fd == -1)
 			err(1, "can't open %s for %s", fname,
-			    (flags & O_WRONLY) ? "writing" : "reading");
+			    (oflags & O_WRONLY) ? "writing" : "reading");
 	}
+	if (fstat(fd, &sb) == -1 || S_ISDIR(sb.st_mode))
+		errx(1, "not a valid file: %s", fname);
 	return fd;
 }
 
@@ -126,14 +130,14 @@ parseb64file(const char *filename, char *b64, void *buf, size_t buflen,
 
 	commentend = strchr(b64, '\n');
 	if (!commentend || commentend - b64 <= COMMENTHDRLEN ||
-	    memcmp(b64, COMMENTHDR, COMMENTHDRLEN))
+	    memcmp(b64, COMMENTHDR, COMMENTHDRLEN) != 0)
 		errx(1, "invalid comment in %s; must start with '%s'",
 		    filename, COMMENTHDR);
 	*commentend = 0;
 	if (comment) {
 		if (strlcpy(comment, b64 + COMMENTHDRLEN,
 		    COMMENTMAXLEN) >= COMMENTMAXLEN)
-			err(1, "comment too long");
+			errx(1, "comment too long");
 	}
 	b64end = strchr(commentend + 1, '\n');
 	if (!b64end)
@@ -142,7 +146,7 @@ parseb64file(const char *filename, char *b64, void *buf, size_t buflen,
 	rv = b64_pton(commentend + 1, buf, buflen);
 	if (rv != buflen)
 		errx(1, "invalid b64 encoding in %s", filename);
-	if (memcmp(buf, PKALG, 2))
+	if (memcmp(buf, PKALG, 2) != 0)
 		errx(1, "unsupported file %s", filename);
 	return b64end - b64 + 1;
 }
@@ -171,21 +175,22 @@ readmsg(const char *filename, unsigned long long *msglenp)
 	struct stat sb;
 	ssize_t x, space;
 	int fd;
-	const size_t chunklen = 64 * 1024;
 
 	fd = xopen(filename, O_RDONLY | O_NOFOLLOW, 0);
 	if (fstat(fd, &sb) == 0 && S_ISREG(sb.st_mode)) {
 		if (sb.st_size > (1UL << 30))
 			errx(1, "msg too large in %s", filename);
 		space = sb.st_size + 1;
-		msg = xmalloc(space + 1);
 	} else {
-		space = 0;
+		space = 64 * 1024;
 	}
 
+	msg = xmalloc(space + 1);
 	while (1) {
 		if (space == 0) {
-			space = chunklen;
+			if (msglen * 2 > (1UL << 30))
+				errx(1, "msg too large in %s", filename);
+			space = msglen;
 			if (!(msg = realloc(msg, msglen + space + 1)))
 				errx(1, "realloc");
 		}
@@ -195,8 +200,6 @@ readmsg(const char *filename, unsigned long long *msglenp)
 			break;
 		space -= x;
 		msglen += x;
-		if (msglen > (1UL << 30))
-			errx(1, "msg too large in %s", filename);
 	}
 
 	msg[msglen] = 0;
@@ -216,44 +219,36 @@ writeall(int fd, const void *buf, size_t buflen, const char *filename)
 		if (x == -1)
 			err(1, "write to %s", filename);
 		buflen -= x;
-		buf = (char*)buf + x;
+		buf = (char *)buf + x;
 	}
 }
 
 #ifndef VERIFYONLY
 static void
-appendall(const char *filename, const void *buf, size_t buflen)
-{
-	int fd;
-
-	fd = xopen(filename, O_NOFOLLOW | O_WRONLY | O_APPEND, 0);
-	writeall(fd, buf, buflen, filename);
-	close(fd);
-}
-
-static void
 writeb64file(const char *filename, const char *comment, const void *buf,
-    size_t buflen, int flags, mode_t mode)
+    size_t buflen, const void *msg, size_t msglen, int oflags, mode_t mode)
 {
 	char header[1024];
 	char b64[1024];
 	int fd, rv;
 
-	fd = xopen(filename, O_CREAT|flags|O_NOFOLLOW|O_WRONLY, mode);
+	fd = xopen(filename, O_CREAT|oflags|O_NOFOLLOW|O_WRONLY, mode);
 	if (snprintf(header, sizeof(header), "%s%s\n",
 	    COMMENTHDR, comment) >= sizeof(header))
-		err(1, "comment too long");
+		errx(1, "comment too long");
 	writeall(fd, header, strlen(header), filename);
 	if ((rv = b64_ntop(buf, buflen, b64, sizeof(b64)-1)) == -1)
 		errx(1, "b64 encode failed");
 	b64[rv++] = '\n';
 	writeall(fd, b64, rv, filename);
 	explicit_bzero(b64, sizeof(b64));
+	if (msg)
+		writeall(fd, msg, msglen, filename);
 	close(fd);
 }
 
 static void
-kdf(uint8_t *salt, size_t saltlen, int rounds, int allowstdin,
+kdf(uint8_t *salt, size_t saltlen, int rounds, int allowstdin, int confirm,
     uint8_t *key, size_t keylen)
 {
 	char pass[1024];
@@ -270,6 +265,15 @@ kdf(uint8_t *salt, size_t saltlen, int rounds, int allowstdin,
 		errx(1, "unable to read passphrase");
 	if (strlen(pass) == 0)
 		errx(1, "please provide a password");
+	if (confirm && !(rppflags & RPP_STDIN)) {
+		char pass2[1024];
+		if (!readpassphrase("confirm passphrase: ", pass2,
+		    sizeof(pass2), rppflags))
+			errx(1, "unable to read passphrase");
+		if (strcmp(pass, pass2) != 0)
+			errx(1, "passwords don't match");
+		explicit_bzero(pass2, sizeof(pass2));
+	}
 	if (bcrypt_pbkdf(pass, strlen(pass), salt, saltlen, key,
 	    keylen, rounds) == -1)
 		errx(1, "bcrypt pbkdf");
@@ -314,7 +318,7 @@ generate(const char *pubkeyfile, const char *seckeyfile, int rounds,
 	enckey.kdfrounds = htonl(rounds);
 	memcpy(enckey.fingerprint, fingerprint, FPLEN);
 	arc4random_buf(enckey.salt, sizeof(enckey.salt));
-	kdf(enckey.salt, sizeof(enckey.salt), rounds, 1, xorkey, sizeof(xorkey));
+	kdf(enckey.salt, sizeof(enckey.salt), rounds, 1, 1, xorkey, sizeof(xorkey));
 	memcpy(enckey.checksum, digest, sizeof(enckey.checksum));
 	for (i = 0; i < sizeof(enckey.seckey); i++)
 		enckey.seckey[i] ^= xorkey[i];
@@ -323,18 +327,18 @@ generate(const char *pubkeyfile, const char *seckeyfile, int rounds,
 
 	if (snprintf(commentbuf, sizeof(commentbuf), "%s secret key",
 	    comment) >= sizeof(commentbuf))
-		err(1, "comment too long");
+		errx(1, "comment too long");
 	writeb64file(seckeyfile, commentbuf, &enckey,
-	    sizeof(enckey), O_EXCL, 0600);
+	    sizeof(enckey), NULL, 0, O_EXCL, 0600);
 	explicit_bzero(&enckey, sizeof(enckey));
 
 	memcpy(pubkey.pkalg, PKALG, 2);
 	memcpy(pubkey.fingerprint, fingerprint, FPLEN);
 	if (snprintf(commentbuf, sizeof(commentbuf), "%s public key",
 	    comment) >= sizeof(commentbuf))
-		err(1, "comment too long");
+		errx(1, "comment too long");
 	writeb64file(pubkeyfile, commentbuf, &pubkey,
-	    sizeof(pubkey), O_EXCL, 0666);
+	    sizeof(pubkey), NULL, 0, O_EXCL, 0666);
 }
 
 static void
@@ -346,25 +350,26 @@ sign(const char *seckeyfile, const char *msgfile, const char *sigfile,
 	struct enckey enckey;
 	uint8_t xorkey[sizeof(enckey.seckey)];
 	uint8_t *msg;
-	char comment[COMMENTMAXLEN], sigcomment[1024];
+	char comment[COMMENTMAXLEN], sigcomment[COMMENTMAXLEN];
+	char *secname;
 	unsigned long long msglen;
 	int i, rounds;
 	SHA2_CTX ctx;
 
 	readb64file(seckeyfile, &enckey, sizeof(enckey), comment);
 
-	if (memcmp(enckey.kdfalg, KDFALG, 2))
+	if (memcmp(enckey.kdfalg, KDFALG, 2) != 0)
 		errx(1, "unsupported KDF");
 	rounds = ntohl(enckey.kdfrounds);
 	kdf(enckey.salt, sizeof(enckey.salt), rounds, strcmp(msgfile, "-") != 0,
-	    xorkey, sizeof(xorkey));
+	    0, xorkey, sizeof(xorkey));
 	for (i = 0; i < sizeof(enckey.seckey); i++)
 		enckey.seckey[i] ^= xorkey[i];
 	explicit_bzero(xorkey, sizeof(xorkey));
 	SHA512Init(&ctx);
 	SHA512Update(&ctx, enckey.seckey, sizeof(enckey.seckey));
 	SHA512Final(digest, &ctx);
-	if (memcmp(enckey.checksum, digest, sizeof(enckey.checksum)))
+	if (memcmp(enckey.checksum, digest, sizeof(enckey.checksum)) != 0)
 	    errx(1, "incorrect passphrase");
 	explicit_bzero(digest, sizeof(digest));
 
@@ -375,12 +380,21 @@ sign(const char *seckeyfile, const char *msgfile, const char *sigfile,
 	explicit_bzero(&enckey, sizeof(enckey));
 
 	memcpy(sig.pkalg, PKALG, 2);
-	if (snprintf(sigcomment, sizeof(sigcomment), "signature from %s",
-	    comment) >= sizeof(sigcomment))
-		err(1, "comment too long");
-	writeb64file(sigfile, sigcomment, &sig, sizeof(sig), O_TRUNC, 0666);
+	if ((secname = strstr(seckeyfile, ".sec")) && strlen(secname) == 4) {
+		if (snprintf(sigcomment, sizeof(sigcomment), VERIFYWITH "%.*s.pub",
+		    (int)strlen(seckeyfile) - 4, seckeyfile) >= sizeof(sigcomment))
+			errx(1, "comment too long");
+	} else {
+		if (snprintf(sigcomment, sizeof(sigcomment), "signature from %s",
+		    comment) >= sizeof(sigcomment))
+			errx(1, "comment too long");
+	}
 	if (embedded)
-		appendall(sigfile, msg, msglen);
+		writeb64file(sigfile, sigcomment, &sig, sizeof(sig), msg,
+		    msglen, O_TRUNC, 0666);
+	else
+		writeb64file(sigfile, sigcomment, &sig, sizeof(sig), NULL,
+		    0, O_TRUNC, 0666);
 
 	free(msg);
 }
@@ -412,19 +426,22 @@ inspect(const char *seckeyfile, const char *pubkeyfile, const char *sigfile)
 #endif
 
 static void
-verifymsg(uint8_t *pubkey, uint8_t *msg, unsigned long long msglen,
-    uint8_t *sig, int quiet)
+verifymsg(struct pubkey *pubkey, uint8_t *msg, unsigned long long msglen,
+    struct sig *sig, int quiet)
 {
 	uint8_t *sigbuf, *dummybuf;
 	unsigned long long siglen, dummylen;
 
+	if (memcmp(pubkey->fingerprint, sig->fingerprint, FPLEN) != 0)
+		errx(1, "verification failed: checked against wrong key");
+
 	siglen = SIGBYTES + msglen;
 	sigbuf = xmalloc(siglen);
 	dummybuf = xmalloc(siglen);
-	memcpy(sigbuf, sig, SIGBYTES);
+	memcpy(sigbuf, sig->sig, SIGBYTES);
 	memcpy(sigbuf + SIGBYTES, msg, msglen);
 	if (crypto_sign_ed25519_open(dummybuf, &dummylen, sigbuf, siglen,
-	    pubkey) == -1)
+	    pubkey->pubkey) == -1)
 		errx(1, "signature verification failed");
 	if (!quiet)
 		printf("Signature Verified\n");
@@ -432,43 +449,85 @@ verifymsg(uint8_t *pubkey, uint8_t *msg, unsigned long long msglen,
 	free(dummybuf);
 }
 
+static void
+readpubkey(const char *pubkeyfile, struct pubkey *pubkey,
+    const char *sigcomment)
+{
+
+	if (!pubkeyfile) {
+		if ((pubkeyfile = strstr(sigcomment, VERIFYWITH))) {
+			pubkeyfile += strlen(VERIFYWITH);
+			if (strncmp(pubkeyfile, "/etc/signify/", 13) != 0 ||
+			    strstr(pubkeyfile, "/../") != NULL)
+				errx(1, "untrusted path %s", pubkeyfile);
+		} else
+			usage("must specify pubkey");
+	}
+	readb64file(pubkeyfile, pubkey, sizeof(*pubkey), NULL);
+}
+
+static void
+verifysimple(const char *pubkeyfile, const char *msgfile, const char *sigfile,
+    int quiet)
+{
+	char sigcomment[COMMENTMAXLEN];
+	struct sig sig;
+	struct pubkey pubkey;
+	unsigned long long msglen;
+	uint8_t *msg;
+
+	msg = readmsg(msgfile, &msglen);
+
+	readb64file(sigfile, &sig, sizeof(sig), sigcomment);
+	readpubkey(pubkeyfile, &pubkey, sigcomment);
+
+	verifymsg(&pubkey, msg, msglen, &sig, quiet);
+
+	free(msg);
+}
+
+static uint8_t *
+verifyembedded(const char *pubkeyfile, const char *sigfile,
+    int quiet, unsigned long long *msglenp)
+{
+	char sigcomment[COMMENTMAXLEN];
+	struct sig sig;
+	struct pubkey pubkey;
+	unsigned long long msglen, siglen;
+	uint8_t *msg;
+
+	msg = readmsg(sigfile, &msglen);
+
+	siglen = parseb64file(sigfile, msg, &sig, sizeof(sig), sigcomment);
+	readpubkey(pubkeyfile, &pubkey, sigcomment);
+
+	msglen -= siglen;
+	memmove(msg, msg + siglen, msglen);
+	msg[msglen] = 0;
+
+	verifymsg(&pubkey, msg, msglen, &sig, quiet);
+
+	*msglenp = msglen;
+	return msg;
+}
 
 static void
 verify(const char *pubkeyfile, const char *msgfile, const char *sigfile,
     int embedded, int quiet)
 {
-	struct sig sig;
-	struct pubkey pubkey;
-	unsigned long long msglen, siglen = 0;
+	unsigned long long msglen;
 	uint8_t *msg;
 	int fd;
 
-	msg = readmsg(embedded ? sigfile : msgfile, &msglen);
-
-	readb64file(pubkeyfile, &pubkey, sizeof(pubkey), NULL);
 	if (embedded) {
-		siglen = parseb64file(sigfile, msg, &sig, sizeof(sig), NULL);
-		msg += siglen;
-		msglen -= siglen;
-	} else {
-		readb64file(sigfile, &sig, sizeof(sig), NULL);
-	}
-
-	if (memcmp(pubkey.fingerprint, sig.fingerprint, FPLEN)) {
-#ifndef VERIFYONLY
-		inspect(NULL, pubkeyfile, sigfile);
-#endif
-		errx(1, "verification failed: checked against wrong key");
-	}
-
-	verifymsg(pubkey.pubkey, msg, msglen, sig.sig, quiet);
-	if (embedded) {
+		msg = verifyembedded(pubkeyfile, sigfile, quiet, &msglen);
 		fd = xopen(msgfile, O_CREAT|O_TRUNC|O_NOFOLLOW|O_WRONLY, 0666);
 		writeall(fd, msg, msglen, msgfile);
+		free(msg);
 		close(fd);
+	} else {
+		verifysimple(pubkeyfile, msgfile, sigfile, quiet);
 	}
-
-	free(msg - siglen);
 }
 
 #ifndef VERIFYONLY
@@ -490,8 +549,8 @@ verifychecksums(char *msg, int argc, char **argv, int quiet)
 
 	line = msg;
 	while (line && *line) {
-		if (!(checksums = realloc(checksums,
-		    sizeof(*c) * (nchecksums + 1))))
+		if (!(checksums = reallocarray(checksums,
+		    nchecksums + 1, sizeof(*checksums))))
 			err(1, "realloc");
 		c = &checksums[nchecksums++];
 		if ((endline = strchr(line, '\n')))
@@ -567,29 +626,13 @@ static void
 check(const char *pubkeyfile, const char *sigfile, int quiet, int argc,
     char **argv)
 {
-	struct sig sig;
-	struct pubkey pubkey;
-	unsigned long long msglen, siglen;
+	unsigned long long msglen;
 	uint8_t *msg;
 
-	msg = readmsg(sigfile, &msglen);
-
-	readb64file(pubkeyfile, &pubkey, sizeof(pubkey), NULL);
-	siglen = parseb64file(sigfile, msg, &sig, sizeof(sig), NULL);
-	msg += siglen;
-	msglen -= siglen;
-
-	if (memcmp(pubkey.fingerprint, sig.fingerprint, FPLEN)) {
-#ifndef VERIFYONLY
-		inspect(NULL, pubkeyfile, sigfile);
-#endif
-		errx(1, "verification failed: checked against wrong key");
-	}
-
-	verifymsg(pubkey.pubkey, msg, msglen, sig.sig, quiet);
+	msg = verifyembedded(pubkeyfile, sigfile, quiet, &msglen);
 	verifychecksums((char *)msg, argc, argv, quiet);
 
-	free(msg - siglen);
+	free(msg);
 }
 #endif
 
@@ -679,20 +722,18 @@ main(int argc, char **argv)
 #ifndef VERIFYONLY
 	if (verb == CHECK) {
 		if (!pubkeyfile || !sigfile)
-			usage("need pubkey and sigfile");
+			usage("must specify pubkey and sigfile");
 		check(pubkeyfile, sigfile, quiet, argc, argv);
 		return 0;
 	}
 #endif
-
-	quiet = 1; /* retain quiet default for 5.5 release */
 
 	if (argc != 0)
 		usage(NULL);
 
 	if (!sigfile && msgfile) {
 		if (strcmp(msgfile, "-") == 0)
-			errx(1, "must specify sigfile with - message");
+			usage("must specify sigfile with - message");
 		if (snprintf(sigfilebuf, sizeof(sigfilebuf), "%s.sig",
 		    msgfile) >= sizeof(sigfilebuf))
 			errx(1, "path too long");
@@ -703,7 +744,7 @@ main(int argc, char **argv)
 #ifndef VERIFYONLY
 	case GENERATE:
 		if (!pubkeyfile || !seckeyfile)
-			usage("need pubkey and seckey");
+			usage("must specify pubkey and seckey");
 		generate(pubkeyfile, seckeyfile, rounds, comment);
 		break;
 	case INSPECT:
@@ -711,13 +752,13 @@ main(int argc, char **argv)
 		break;
 	case SIGN:
 		if (!msgfile || !seckeyfile)
-			usage("need message and seckey");
+			usage("must specify message and seckey");
 		sign(seckeyfile, msgfile, sigfile, embedded);
 		break;
 #endif
 	case VERIFY:
-		if (!msgfile || !pubkeyfile)
-			usage("need message and pubkey");
+		if (!msgfile)
+			usage("must specify message");
 		verify(pubkeyfile, msgfile, sigfile, embedded, quiet);
 		break;
 	default:
