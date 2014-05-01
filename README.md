@@ -1,4 +1,4 @@
-## OS X port of OpenBSD's signify(1).
+## OS X port of OpenBSD's [signify(1)](http://www.openbsd.org/cgi-bin/man.cgi?query=signify)
 
 Tested on OS X 10.6.8 with GCC 4.2.1 and 10.9.1 with LLVM 5.0.
 
