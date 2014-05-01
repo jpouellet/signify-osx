@@ -6,7 +6,7 @@ doesn't, it shouldn't be too hard to fix.
 
 Man page at http://www.openbsd.org/cgi-bin/man.cgi?query=signify
 
-`src/` is the current (as of 3/14/14) result of `make fetch`.
+`src/` is the current (as of May 1st, 2014) result of `make fetch`.
 
 If you don't trust me (or github) to not have modified anything in there to
 insert a backdoor (why should you?), but you trust the upstream OpenBSD version,
