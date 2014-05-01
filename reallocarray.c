@@ -29,6 +29,8 @@
  */
 
 #include <errno.h>
+#include <stddef.h>
+#include <stdint.h>
 #include <stdlib.h>
 
 /* this is sqrt(SIZE_MAX+1), as s1*s2 <= SIZE_MAX
