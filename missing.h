@@ -1,5 +1,4 @@
-#include <sys/types.h>
-#include <inttypes.h>
+#include <stddef.h>
 
 void explicit_bzero(void *, size_t);
 int timingsafe_bcmp(const void *, const void *, size_t);
