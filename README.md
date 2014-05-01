@@ -1,8 +1,6 @@
 This is an OS X port of OpenBSD's signify(1).
 
-I've only used it with GCC (not llvm/clang) on OS X 10.6.8 with a working CVS,
-because that's all I needed. It may or may not work elsewhere, although if it
-doesn't, it shouldn't be too hard to fix.
+Tested on OS X 10.6.8 with GCC 4.2.1 and 10.9.1 with LLVM 5.0.
 
 Man page at http://www.openbsd.org/cgi-bin/man.cgi?query=signify
 
