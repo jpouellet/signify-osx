@@ -76,13 +76,14 @@ src/lib/libc/hash/sha512hl.c: src/lib/libc/hash/helper.c
 	    -e 's/HASH/SHA512/g' \
 	    -e 's/SHA[0-9][0-9][0-9]_CTX/SHA2_CTX/g' $< > $@
 
-src/lib/libc/hash/helper.c: fetch
+src/lib/libc/hash/helper.c:
+	$(error Missing source files... Maybe you want to `make fetch`?)
 
 fetch:
 	cvs -qd ${CVSROOT} get -P ${FROM_CVS}
 
 clean:
-	rm -rf src signify signify.1
+	rm -rf signify signify.1
 
 install:
 	install -d /usr/local/bin /usr/local/share/man/man1
