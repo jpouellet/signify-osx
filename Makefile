@@ -18,6 +18,7 @@ SRCS+= src/usr.bin/ssh/smult_curve25519_ref.c
 
 LOCAL_SRCS+= badrandom.c
 LOCAL_SRCS+= hashaliases.c
+LOCAL_SRCS+= reallocarray.c
 LOCAL_SRCS+= src/lib/libc/hash/sha224hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha256hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha384hl.c
