@@ -27,6 +27,7 @@ LOCAL_SRCS+= src/lib/libc/hash/sha512hl.c
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
+INCL+= src/lib/libutil/util.h
 INCL+= src/usr.bin/ssh/crypto_api.h
 INCL+= src/usr.bin/ssh/fe25519.h
 INCL+= src/usr.bin/ssh/ge25519.h
@@ -41,8 +42,9 @@ FETCH_ONLY+= src/etc/signify
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
 CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include
-CPPFLAGS+= -include missing.h
+CPPFLAGS+= -include missing.h -include src/lib/libutil/util.h
 CPPFLAGS+= -D_NSIG=NSIG
+CPPFLAGS+= '-D__weak_alias(a,b)='
 CPPFLAGS+= -Wno-attributes
 
 .PHONY: fetch hash_helpers clean install
