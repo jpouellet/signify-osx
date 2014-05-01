@@ -26,3 +26,6 @@ make fetch
 ```
 
 and then the usual `make`, `make install`.
+
+## TODO: (pull requests welcome)
+ - Add regression tests
