@@ -1,4 +1,4 @@
-# OS X port of OpenBSD's signify(1).
+## OS X port of OpenBSD's signify(1).
 
 Tested on OS X 10.6.8 with GCC 4.2.1 and 10.9.1 with LLVM 5.0.
 
@@ -11,7 +11,7 @@ insert a backdoor (why should you?), but you trust the upstream OpenBSD version,
 then simply `rm -r src` it and audit the rest of the files that constitute
 this "port". It's less than 200 lines, you can do it :)
 
-## Building:
+### Building:
 
 I've included a copy of the upstream signify source in this repo for
 convenience, but you should probably fetch it yourself. Doing so requires a
@@ -27,5 +27,5 @@ make fetch
 
 and then the usual `make`, `make install`.
 
-## TODO: (pull requests welcome)
+### TODO: (pull requests welcome)
  - Add regression tests
