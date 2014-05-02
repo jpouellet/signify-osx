@@ -29,3 +29,4 @@ and then the usual `make`, `make install`.
 
 ### TODO: (pull requests welcome)
  - Add regression tests
+ - Do a better job getting randomness
