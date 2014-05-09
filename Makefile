@@ -5,6 +5,7 @@ SRCS+= src/lib/libc/crypt/blowfish.c
 SRCS+= src/lib/libc/gen/readpassphrase.c
 SRCS+= src/lib/libc/hash/sha2.c
 SRCS+= src/lib/libc/net/base64.c
+SRCS+= src/lib/libc/stdlib/reallocarray.c
 SRCS+= src/lib/libc/string/explicit_bzero.c
 SRCS+= src/lib/libc/string/timingsafe_bcmp.c
 SRCS+= src/lib/libutil/bcrypt_pbkdf.c
@@ -18,7 +19,6 @@ SRCS+= src/usr.bin/ssh/smult_curve25519_ref.c
 
 LOCAL_SRCS+= badrandom.c
 LOCAL_SRCS+= hashaliases.c
-LOCAL_SRCS+= reallocarray.c
 LOCAL_SRCS+= src/lib/libc/hash/sha224hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha256hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha384hl.c
