@@ -33,6 +33,7 @@ INCL+= src/include/sha2.h
 INCL+= src/lib/libc/crypt/chacha_private.h
 INCL+= src/lib/libc/include/thread_private.h
 INCL+= src/lib/libutil/ohash.h
+INCL+= src/lib/libutil/util.h
 INCL+= src/usr.bin/ssh/crypto_api.h
 INCL+= src/usr.bin/ssh/fe25519.h
 INCL+= src/usr.bin/ssh/ge25519.h
