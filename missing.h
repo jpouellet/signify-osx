@@ -1,5 +1,4 @@
 #include <sys/types.h>
-#include <stdint.h>
 #include <stddef.h>
 
 void explicit_bzero(void *, size_t);
