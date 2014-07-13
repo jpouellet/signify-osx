@@ -1,6 +1,7 @@
 #CVSROOT= anoncvs@anoncvs.openbsd.org:/cvs
 CVSROOT= anoncvs@anoncvs3.usa.openbsd.org:/cvs
 
+SRCS+= src/lib/libc/crypt/arc4random.c
 SRCS+= src/lib/libc/crypt/blowfish.c
 SRCS+= src/lib/libc/gen/readpassphrase.c
 SRCS+= src/lib/libc/hash/sha2.c
@@ -8,6 +9,7 @@ SRCS+= src/lib/libc/net/base64.c
 SRCS+= src/lib/libc/stdlib/reallocarray.c
 SRCS+= src/lib/libc/string/explicit_bzero.c
 SRCS+= src/lib/libc/string/timingsafe_bcmp.c
+SRCS+= src/lib/libcrypto/crypto/getentropy_osx.c
 SRCS+= src/lib/libutil/bcrypt_pbkdf.c
 SRCS+= src/lib/libutil/ohash.c
 SRCS+= src/usr.bin/signify/crypto_api.c
@@ -18,8 +20,8 @@ SRCS+= src/usr.bin/ssh/fe25519.c
 SRCS+= src/usr.bin/ssh/sc25519.c
 SRCS+= src/usr.bin/ssh/smult_curve25519_ref.c
 
-LOCAL_SRCS+= badrandom.c
 LOCAL_SRCS+= hashaliases.c
+LOCAL_SRCS+= nopthreads.c
 LOCAL_SRCS+= src/lib/libc/hash/sha224hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha256hl.c
 LOCAL_SRCS+= src/lib/libc/hash/sha384hl.c
@@ -28,6 +30,8 @@ LOCAL_SRCS+= src/lib/libc/hash/sha512hl.c
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
+INCL+= src/lib/libc/crypt/chacha_private.h
+INCL+= src/lib/libc/include/thread_private.h
 INCL+= src/lib/libutil/ohash.h
 INCL+= src/usr.bin/ssh/crypto_api.h
 INCL+= src/usr.bin/ssh/fe25519.h
@@ -42,7 +46,7 @@ FETCH_ONLY+= src/etc/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
-CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
+CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil -Isrc/lib/libc/include
 CPPFLAGS+= -include missing.h
 CPPFLAGS+= -D_NSIG=NSIG
 CPPFLAGS+= '-D__weak_alias(a,b)='
