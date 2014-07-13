@@ -47,16 +47,19 @@ FETCH_ONLY+= src/etc/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
-CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil -Isrc/lib/libc/include
-CPPFLAGS+= -include missing.h
-CPPFLAGS+= -D_NSIG=NSIG
-CPPFLAGS+= '-D__weak_alias(a,b)='
-CPPFLAGS+= -Wno-attributes
+CFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
+CFLAGS+= -Isrc/lib/libc/include
+CFLAGS+= -include missing.h
+CFLAGS+= -D_NSIG=NSIG
+CFLAGS+= '-D__weak_alias(a,b)='
+CFLAGS+= -Wall -Wextra
+CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
+CFLAGS+= -Wno-unused-parameter
 
 .PHONY: fetch hash_helpers clean install
 
 signify: hash_helpers
-	cc ${CPPFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
+	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
 	cp src/usr.bin/signify/signify.1 .
 
 hash_helpers: src/lib/libc/hash/sha224hl.c src/lib/libc/hash/sha256hl.c \
