@@ -9,6 +9,7 @@ SRCS+= src/lib/libc/stdlib/reallocarray.c
 SRCS+= src/lib/libc/string/explicit_bzero.c
 SRCS+= src/lib/libc/string/timingsafe_bcmp.c
 SRCS+= src/lib/libutil/bcrypt_pbkdf.c
+SRCS+= src/lib/libutil/ohash.c
 SRCS+= src/usr.bin/signify/crypto_api.c
 SRCS+= src/usr.bin/signify/mod_ed25519.c
 SRCS+= src/usr.bin/signify/mod_ge25519.c
@@ -27,7 +28,7 @@ LOCAL_SRCS+= src/lib/libc/hash/sha512hl.c
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
-INCL+= src/lib/libutil/util.h
+INCL+= src/lib/libutil/ohash.h
 INCL+= src/usr.bin/ssh/crypto_api.h
 INCL+= src/usr.bin/ssh/fe25519.h
 INCL+= src/usr.bin/ssh/ge25519.h
@@ -41,8 +42,8 @@ FETCH_ONLY+= src/etc/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
-CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include
-CPPFLAGS+= -include missing.h -include src/lib/libutil/util.h
+CPPFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
+CPPFLAGS+= -include missing.h
 CPPFLAGS+= -D_NSIG=NSIG
 CPPFLAGS+= '-D__weak_alias(a,b)='
 CPPFLAGS+= -Wno-attributes
