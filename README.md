@@ -27,4 +27,6 @@ make fetch
 
 and then the usual `make`, `make install`.
 
+### Testing:
+
 To run the regression tests, `make test`.
