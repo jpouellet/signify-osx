@@ -1,8 +1,8 @@
-## OS X port of OpenBSD's [signify(1)](http://www.openbsd.org/cgi-bin/man.cgi?query=signify)
+## OS X port of OpenBSD's [signify(1)](http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1)
 
 Tested on OS X 10.6.8 with GCC 4.2.1 and 10.9.1 with LLVM 5.0.
 
-Man page at http://www.openbsd.org/cgi-bin/man.cgi?query=signify
+Man page at http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1
 
 `src/` is the current (as of July 13th, 2014) result of `make fetch` (cvs get) and `make hash_helpers` (sed).
 
