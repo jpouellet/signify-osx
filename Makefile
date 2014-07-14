@@ -20,12 +20,14 @@ SRCS+= src/usr.bin/ssh/fe25519.c
 SRCS+= src/usr.bin/ssh/sc25519.c
 SRCS+= src/usr.bin/ssh/smult_curve25519_ref.c
 
+HASH_HELPERS+= src/lib/libc/hash/sha224hl.c
+HASH_HELPERS+= src/lib/libc/hash/sha256hl.c
+HASH_HELPERS+= src/lib/libc/hash/sha384hl.c
+HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
+
+LOCAL_SRCS+= ${HASH_HELPERS}
 LOCAL_SRCS+= hashaliases.c
 LOCAL_SRCS+= nopthreads.c
-LOCAL_SRCS+= src/lib/libc/hash/sha224hl.c
-LOCAL_SRCS+= src/lib/libc/hash/sha256hl.c
-LOCAL_SRCS+= src/lib/libc/hash/sha384hl.c
-LOCAL_SRCS+= src/lib/libc/hash/sha512hl.c
 
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
@@ -58,12 +60,11 @@ CFLAGS+= -Wno-unused-parameter
 
 .PHONY: fetch hash_helpers clean install
 
-signify: hash_helpers
+signify: ${SRCS} ${LOCAL_SRCS} ${INCL}
 	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
 	cp src/usr.bin/signify/signify.1 .
 
-hash_helpers: src/lib/libc/hash/sha224hl.c src/lib/libc/hash/sha256hl.c \
-              src/lib/libc/hash/sha384hl.c src/lib/libc/hash/sha512hl.c
+hash_helpers: ${HASH_HELPERS}
 
 src/lib/libc/hash/sha224hl.c: src/lib/libc/hash/helper.c
 	sed -e 's/hashinc/sha2.h/g' \
