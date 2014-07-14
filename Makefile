@@ -59,13 +59,13 @@ CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
 
-.PHONY: fetch hash_helpers clean install test check-updates
+.PHONY: fetch hash-helpers clean install test check-updates
 
 signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
 	cp src/usr.bin/signify/signify.1 .
 
-hash_helpers: ${HASH_HELPERS}
+hash-helpers: ${HASH_HELPERS}
 
 src/lib/libc/hash/sha224hl.c: src/lib/libc/hash/helper.c
 	sed -e 's/hashinc/sha2.h/g' \
