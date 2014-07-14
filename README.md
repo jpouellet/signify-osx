@@ -30,3 +30,7 @@ and then the usual `make`, `make install`.
 ### Testing:
 
 To run the regression tests, `make test`.
+
+### Keeping -current:
+
+To check for upstream updates, `make check-updates`. (requires working CVS)
