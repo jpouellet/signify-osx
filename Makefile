@@ -61,7 +61,7 @@ CFLAGS+= -Wno-unused-parameter
 
 .PHONY: fetch hash_helpers clean install
 
-signify: ${SRCS} ${LOCAL_SRCS} ${INCL}
+signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
 	cp src/usr.bin/signify/signify.1 .
 
