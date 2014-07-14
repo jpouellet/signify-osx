@@ -59,7 +59,7 @@ CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
 
-.PHONY: fetch hash_helpers clean install
+.PHONY: fetch hash_helpers clean install test
 
 signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
@@ -94,9 +94,12 @@ fetch:
 	cvs -qd ${CVSROOT} get -P ${FROM_CVS}
 
 clean:
-	rm -rf signify signify.1
+	rm -rf signify signify.1 test-results
 
 install:
 	install -d /usr/local/bin /usr/local/share/man/man1
 	install -Ss -m 755 signify /usr/local/bin
 	install -S -m 644 signify.1 /usr/local/share/man/man1
+
+test: signify
+	@sh ./regress.sh
