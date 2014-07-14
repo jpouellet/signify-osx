@@ -46,6 +46,7 @@ MAN= src/usr.bin/signify/signify.1
 
 FETCH_ONLY+= src/lib/libc/hash/helper.c
 FETCH_ONLY+= src/etc/signify
+FETCH_ONLY+= src/regress/usr.bin/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
