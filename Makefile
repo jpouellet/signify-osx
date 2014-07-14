@@ -98,7 +98,7 @@ fetch:
 clean:
 	rm -rf signify signify.1 test-results
 
-install:
+install: signify
 	install -d ${PREFIX}/bin ${PREFIX}/share/man/man1
 	install -Ss -m 755 signify ${PREFIX}/bin
 	install -S -m 644 signify.1 ${PREFIX}/share/man/man1
