@@ -1,3 +1,5 @@
+PREFIX= /usr/local
+
 #CVSROOT= anoncvs@anoncvs.openbsd.org:/cvs
 CVSROOT= anoncvs@anoncvs3.usa.openbsd.org:/cvs
 
@@ -97,9 +99,9 @@ clean:
 	rm -rf signify signify.1 test-results
 
 install:
-	install -d /usr/local/bin /usr/local/share/man/man1
-	install -Ss -m 755 signify /usr/local/bin
-	install -S -m 644 signify.1 /usr/local/share/man/man1
+	install -d ${PREFIX}/bin ${PREFIX}/share/man/man1
+	install -Ss -m 755 signify ${PREFIX}/bin
+	install -S -m 644 signify.1 ${PREFIX}/share/man/man1
 
 test: signify
 	@sh ./regress.sh
