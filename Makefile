@@ -126,17 +126,10 @@ dist: $(DISTDIR).tar.gz
 clean_DISTDIR:= $(RM) -r $(DISTDIR)
 $(DISTDIR).tar.gz: $(FROM_CVS) $(LOCAL_SRCS) $(LOCAL_INCL) $(EXTRA_DIST)
 	$(clean_DISTDIR)
-	mkdir -p $(sort $(dir $(addprefix $(DISTDIR)/,$^)))
+	install -d $(sort $(dir $(addprefix $(DISTDIR)/,$^)))
 	for file in $^; do \
-	  dirname=$${file%/*}; \
-	  echo $${dirname}; \
-	  if test -d $${dirname}; then \
-	   cp -r $${file} $(DISTDIR)/$${file}; \
-	  elif test -z $${dirname} -o $${dirname} = $${file}; then \
-	    cp $${file} $(DISTDIR)/; \
-	  else \
-	    cp $${file} $(DISTDIR)/$${dirname}/; \
-	  fi \
+	  test -d $${file} && cp -r $${file} $(DISTDIR)/$${file} || \
+	  install -m 644 $${file} $(DISTDIR)/$${file%/*}; \
 	done
 	tar czf $@ $(DISTDIR)/*
 	$(clean_DISTDIR)
