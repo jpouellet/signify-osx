@@ -63,7 +63,7 @@ CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
 
-.PHONY: fetch hash-helpers clean install test check check-updates
+.PHONY: fetch hash-helpers clean install check test check-updates
 
 signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
