@@ -1,3 +1,6 @@
+PACKAGE:= signify
+VERSION:= $(shell git describe --tags --always --dirty || echo unknown)
+
 PREFIX= /usr/local
 BINDIR= ${PREFIX}/bin
 MANDIR= ${PREFIX}/share/man
@@ -29,9 +32,10 @@ HASH_HELPERS+= src/lib/libc/hash/sha256hl.c
 HASH_HELPERS+= src/lib/libc/hash/sha384hl.c
 HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
 
-LOCAL_SRCS+= ${HASH_HELPERS}
 LOCAL_SRCS+= hashaliases.c
 LOCAL_SRCS+= nopthreads.c
+
+LOCAL_INCL+= missing.h
 
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
@@ -54,6 +58,9 @@ FETCH_ONLY+= src/regress/usr.bin/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
+EXTRA_DIST+= Makefile
+EXTRA_DIST+= regress.sh
+
 CFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
 CFLAGS+= -Isrc/lib/libc/include
 CFLAGS+= -include missing.h
@@ -63,10 +70,10 @@ CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
 
-.PHONY: fetch hash-helpers clean install check test check-updates
+.PHONY: fetch hash-helpers clean install check test check-updates dist distcheck
 
-signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
-	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
+signify: ${HASH_HELPERS} ${LOCAL_SRCS} ${LOCAL_INCL} ${SRCS} ${INCL}
+	cc ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS} ${HASH_HELPERS}
 	cp src/usr.bin/signify/signify.1 .
 
 hash-helpers: ${HASH_HELPERS}
@@ -112,3 +119,24 @@ test: signify
 
 check-updates:
 	@(cd src && cvs -qn up | (grep -v '^? ' || echo 'Up to date!'))
+
+DISTDIR:= $(PACKAGE)-$(VERSION)
+dist: $(DISTDIR).tar.gz
+
+clean_DISTDIR:= $(RM) -r $(DISTDIR)
+$(DISTDIR).tar.gz: $(FROM_CVS) $(LOCAL_SRCS) $(LOCAL_INCL) $(EXTRA_DIST)
+	$(clean_DISTDIR)
+	install -d $(sort $(dir $(addprefix $(DISTDIR)/,$^)))
+	for file in $^; do \
+	  test -d $${file} && cp -r $${file} $(DISTDIR)/$${file} || \
+	  install -m 644 $${file} $(DISTDIR)/$${file%/*}; \
+	done
+	tar czf $@ $(DISTDIR)/*
+	$(clean_DISTDIR)
+
+distcheck: $(DISTDIR).tar.gz
+	$(clean_DISTDIR)
+	tar xf $<
+	$(MAKE) -C $(DISTDIR) check
+	$(clean_DISTDIR)
+	@echo $< is ready for distribution.
