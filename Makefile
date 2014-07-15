@@ -109,4 +109,4 @@ test: signify
 	@sh ./regress.sh
 
 check-updates:
-	@(cd src; cvs -qn up | grep -v '^? ' || echo 'Up to date!')
+	@(cd src && cvs -qn up | (grep -v '^? ' || echo 'Up to date!'))
