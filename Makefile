@@ -31,13 +31,11 @@ HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
 
 LOCAL_SRCS+= ${HASH_HELPERS}
 LOCAL_SRCS+= hashaliases.c
-LOCAL_SRCS+= nopthreads.c
 
 INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
 INCL+= src/lib/libc/crypt/chacha_private.h
-INCL+= src/lib/libc/include/thread_private.h
 INCL+= src/lib/libcrypto/crypto/arc4random_osx.h
 INCL+= src/lib/libutil/ohash.h
 INCL+= src/lib/libutil/util.h
