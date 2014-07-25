@@ -38,6 +38,7 @@ INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
 INCL+= src/lib/libc/crypt/chacha_private.h
 INCL+= src/lib/libc/include/thread_private.h
+INCL+= src/lib/libcrypto/crypto/arc4random_osx.h
 INCL+= src/lib/libutil/ohash.h
 INCL+= src/lib/libutil/util.h
 INCL+= src/usr.bin/ssh/crypto_api.h
@@ -55,7 +56,7 @@ FETCH_ONLY+= src/regress/usr.bin/signify
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
 CFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
-CFLAGS+= -Isrc/lib/libc/include
+CFLAGS+= -Isrc/lib/libc/include -Isrc/lib/libcrypto/crypto -I.
 CFLAGS+= -include missing.h
 CFLAGS+= -D_NSIG=NSIG
 CFLAGS+= '-D__weak_alias(a,b)='
