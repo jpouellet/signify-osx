@@ -1,4 +1,4 @@
-/*	$OpenBSD: getentropy_osx.c,v 1.6 2014/07/13 13:03:09 deraadt Exp $	*/
+/*	$OpenBSD: getentropy_osx.c,v 1.8 2014/07/21 20:19:47 guenther Exp $	*/
 
 /*
  * Copyright (c) 2014 Theo de Raadt <deraadt@openbsd.org>
@@ -77,9 +77,6 @@
 
 int	getentropy(void *buf, size_t len);
 
-#if 0
-extern int main(int, char *argv[]);
-#endif
 static int gotdata(char *buf, size_t len);
 static int getentropy_urandom(void *buf, size_t len);
 static int getentropy_fallback(void *buf, size_t len);
@@ -297,9 +294,6 @@ getentropy_fallback(void *buf, size_t len)
 			HX(sigprocmask(SIG_BLOCK, NULL, &sigset) == -1,
 			    sigset);
 
-#if 0
-			HF(main);		/* an addr in program */
-#endif
 			HF(getentropy);	/* an addr in this library */
 			HF(printf);		/* an addr in libc */
 			p = (char *)&p;
@@ -424,7 +418,8 @@ getentropy_fallback(void *buf, size_t len)
 		memcpy((char *)buf + i, results, min(sizeof(results), len - i));
 		i += min(sizeof(results), len - i);
 	}
-	memset(results, 0, sizeof results);
+	explicit_bzero(&ctx, sizeof ctx);
+	explicit_bzero(results, sizeof results);
 	if (gotdata(buf, len) == 0) {
 		errno = save_errno;
 		return 0;		/* satisfied */
