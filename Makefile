@@ -10,23 +10,21 @@ SRCS+= src/lib/libc/crypt/blowfish.c
 SRCS+= src/lib/libc/gen/readpassphrase.c
 SRCS+= src/lib/libc/hash/sha2.c
 SRCS+= src/lib/libc/net/base64.c
-SRCS+= src/lib/libc/stdlib/reallocarray.c
 SRCS+= src/lib/libc/string/explicit_bzero.c
 SRCS+= src/lib/libc/string/timingsafe_bcmp.c
 SRCS+= src/lib/libcrypto/crypto/getentropy_osx.c
 SRCS+= src/lib/libutil/bcrypt_pbkdf.c
 SRCS+= src/lib/libutil/ohash.c
 SRCS+= src/usr.bin/signify/crypto_api.c
+SRCS+= src/usr.bin/signify/fe25519.c
 SRCS+= src/usr.bin/signify/mod_ed25519.c
 SRCS+= src/usr.bin/signify/mod_ge25519.c
 SRCS+= src/usr.bin/signify/signify.c
-SRCS+= src/usr.bin/ssh/fe25519.c
-SRCS+= src/usr.bin/ssh/sc25519.c
-SRCS+= src/usr.bin/ssh/smult_curve25519_ref.c
+SRCS+= src/usr.bin/signify/sc25519.c
+SRCS+= src/usr.bin/signify/smult_curve25519_ref.c
 
-HASH_HELPERS+= src/lib/libc/hash/sha224hl.c
+HASH_HELPERS=
 HASH_HELPERS+= src/lib/libc/hash/sha256hl.c
-HASH_HELPERS+= src/lib/libc/hash/sha384hl.c
 HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
 
 LOCAL_SRCS+= ${HASH_HELPERS}
@@ -39,11 +37,11 @@ INCL+= src/lib/libc/crypt/chacha_private.h
 INCL+= src/lib/libcrypto/crypto/arc4random_osx.h
 INCL+= src/lib/libutil/ohash.h
 INCL+= src/lib/libutil/util.h
-INCL+= src/usr.bin/ssh/crypto_api.h
-INCL+= src/usr.bin/ssh/fe25519.h
-INCL+= src/usr.bin/ssh/ge25519.h
-INCL+= src/usr.bin/ssh/ge25519_base.data
-INCL+= src/usr.bin/ssh/sc25519.h
+INCL+= src/usr.bin/signify/crypto_api.h
+INCL+= src/usr.bin/signify/fe25519.h
+INCL+= src/usr.bin/signify/ge25519.h
+INCL+= src/usr.bin/signify/ge25519_base.data
+INCL+= src/usr.bin/signify/sc25519.h
 
 MAN= src/usr.bin/signify/signify.1
 
@@ -53,8 +51,7 @@ FETCH_ONLY+= src/regress/usr.bin/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 
-CFLAGS+= -Isrc/usr.bin/ssh -Isrc/include -Isrc/lib/libutil
-CFLAGS+= -Isrc/lib/libc/include -Isrc/lib/libcrypto/crypto -I.
+CFLAGS+= -Isrc/include -Isrc/lib/libutil -Isrc/usr.bin/signify -I.
 CFLAGS+= -include missing.h
 CFLAGS+= -D_NSIG=NSIG
 CFLAGS+= '-D__weak_alias(a,b)='
@@ -70,19 +67,9 @@ signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 
 hash-helpers: ${HASH_HELPERS}
 
-src/lib/libc/hash/sha224hl.c: src/lib/libc/hash/helper.c
-	sed -e 's/hashinc/sha2.h/g' \
-	    -e 's/HASH/SHA224/g' \
-	    -e 's/SHA[0-9][0-9][0-9]_CTX/SHA2_CTX/g' $< > $@
-
 src/lib/libc/hash/sha256hl.c: src/lib/libc/hash/helper.c
 	sed -e 's/hashinc/sha2.h/g' \
 	    -e 's/HASH/SHA256/g' \
-	    -e 's/SHA[0-9][0-9][0-9]_CTX/SHA2_CTX/g' $< > $@
-
-src/lib/libc/hash/sha384hl.c: src/lib/libc/hash/helper.c
-	sed -e 's/hashinc/sha2.h/g' \
-	    -e 's/HASH/SHA384/g' \
 	    -e 's/SHA[0-9][0-9][0-9]_CTX/SHA2_CTX/g' $< > $@
 
 src/lib/libc/hash/sha512hl.c: src/lib/libc/hash/helper.c
