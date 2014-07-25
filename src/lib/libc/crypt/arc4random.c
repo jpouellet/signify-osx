@@ -1,4 +1,4 @@
-/*	$OpenBSD: arc4random.c,v 1.43 2014/07/13 09:32:42 beck Exp $	*/
+/*	$OpenBSD: arc4random.c,v 1.50 2014/07/21 18:13:12 deraadt Exp $	*/
 
 /*
  * Copyright (c) 1996, David Mazieres <dm@uun.org>
@@ -32,9 +32,6 @@
 #include <sys/types.h>
 #include <sys/param.h>
 #include <sys/time.h>
-#include <sys/mman.h>
-
-#include "thread_private.h"
 
 #define KEYSTREAM_ONLY
 #include "chacha_private.h"
@@ -52,16 +49,20 @@
 #define RSBUFSZ	(16*BLOCKSZ)
 
 /* Marked MAP_INHERIT_ZERO, so zero'd out in fork children. */
-static struct {
+static struct _rs {
 	size_t		rs_have;	/* valid bytes at end of rs_buf */
 	size_t		rs_count;	/* bytes till reseed */
 } *rs;
 
-/* Preserved in fork children. */
-static struct {
+/* Maybe be preserved in fork children, if _rs_allocate() decides. */
+static struct _rsx {
 	chacha_ctx	rs_chacha;	/* chacha context for random keystream */
 	u_char		rs_buf[RSBUFSZ];	/* keystream blocks */
 } *rsx;
+
+static inline int _rs_allocate(struct _rs **, struct _rsx **);
+static inline void _rs_forkdetect(void);
+#include "arc4random.h"
 
 static inline void _rs_rekey(u_char *dat, size_t datlen);
 
@@ -72,17 +73,7 @@ _rs_init(u_char *buf, size_t n)
 		return;
 
 	if (rs == NULL) {
-		if ((rs = mmap(NULL, sizeof(*rs), PROT_READ|PROT_WRITE,
-		    MAP_ANON|MAP_PRIVATE, -1, 0)) == MAP_FAILED)
-			abort();
-#ifdef MAP_INHERIT_ZERO
-		if (minherit(rs, sizeof(*rs), MAP_INHERIT_ZERO) == -1)
-			abort();
-#endif
-	}
-	if (rsx == NULL) {
-		if ((rsx = mmap(NULL, sizeof(*rsx), PROT_READ|PROT_WRITE,
-		    MAP_ANON|MAP_PRIVATE, -1, 0)) == MAP_FAILED)
+		if (_rs_allocate(&rs, &rsx) == -1)
 			abort();
 	}
 
@@ -96,7 +87,7 @@ _rs_stir(void)
 	u_char rnd[KEYSZ + IVSZ];
 
 	if (getentropy(rnd, sizeof rnd) == -1)
-		raise(SIGKILL);
+		_getentropy_fail();
 
 	if (!rs)
 		_rs_init(rnd, sizeof(rnd));
@@ -114,17 +105,7 @@ _rs_stir(void)
 static inline void
 _rs_stir_if_needed(size_t len)
 {
-#ifndef MAP_INHERIT_ZERO
-	static pid_t _rs_pid = 0;
-	pid_t pid = getpid();
-
-	/* If a system lacks MAP_INHERIT_ZERO, resort to getpid() */
-	if (_rs_pid == 0 || _rs_pid != pid) {
-		_rs_pid = pid;
-		if (rs)
-			rs->rs_count = 0;
-	}
-#endif
+	_rs_forkdetect();
 	if (!rs || rs->rs_count <= len)
 		_rs_stir();
 	if (rs->rs_count <= len)
@@ -184,6 +165,7 @@ static inline void
 _rs_random_u32(uint32_t *val)
 {
 	u_char *keystream;
+
 	_rs_stir_if_needed(sizeof(*val));
 	if (rs->rs_have < sizeof(*val))
 		_rs_rekey(NULL, 0);
