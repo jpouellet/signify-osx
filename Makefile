@@ -23,7 +23,6 @@ SRCS+= src/usr.bin/signify/signify.c
 SRCS+= src/usr.bin/signify/sc25519.c
 SRCS+= src/usr.bin/signify/smult_curve25519_ref.c
 
-HASH_HELPERS=
 HASH_HELPERS+= src/lib/libc/hash/sha256hl.c
 HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
 
