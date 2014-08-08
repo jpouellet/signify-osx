@@ -11,6 +11,17 @@ insert a backdoor (why should you?), but you trust the upstream OpenBSD version,
 then simply `rm -r src` it and audit the rest of the files that constitute
 this "port". It's less than 200 lines, you can do it :)
 
+### Easy (non-paranoid, 3rd party-trusting) installation:
+
+If you use macports
+```
+$ sudo port install signify
+```
+
+If you use homebrew, too bad. The homebrew maintainers
+[didn't want it](https://github.com/Homebrew/homebrew/pull/31196).
+If you want it, go bug them about it.
+
 ### Building:
 
 I've included a copy of the upstream signify source in this repo for
