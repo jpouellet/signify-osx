@@ -58,7 +58,7 @@ CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
 
-.PHONY: fetch hash-helpers clean install check test check-updates
+.PHONY: fetch hash-helpers clean install check test up check-updates
 
 signify: ${LOCAL_SRCS} ${SRCS} ${INCL}
 	${CC} ${CFLAGS} -o signify ${SRCS} ${LOCAL_SRCS}
@@ -95,5 +95,7 @@ check: test
 test: signify
 	@sh ./regress.sh
 
+up: check-updates
+
 check-updates:
-	@(cd src && cvs -qn up | (grep -v '^? ' || echo 'Up to date!'))
+	@(cd src && cvs -qn up 2>&1 | (grep -v '^? ' || echo 'Up to date!'))
