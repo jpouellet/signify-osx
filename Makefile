@@ -98,4 +98,5 @@ test: signify
 up: check-updates
 
 check-updates:
-	@(cd src && cvs -qn up 2>&1 | (grep -v '^? ' || echo 'Up to date!'))
+	@(cd src && CVS_RSH=ssh cvs -qn up 2>&1 \
+	    | (grep -v '^? ' || echo 'Up to date!'))
