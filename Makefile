@@ -44,8 +44,11 @@ INCL+= src/usr.bin/signify/sc25519.h
 
 MAN= src/usr.bin/signify/signify.1
 
-FETCH_ONLY+= src/lib/libc/hash/helper.c
 FETCH_ONLY+= src/etc/signify
+FETCH_ONLY+= src/lib/libc/hash/helper.c
+FETCH_ONLY+= src/lib/libc/string/timingsafe_memcmp.c
+FETCH_ONLY+= src/regress/lib/libc/explicit_bzero
+FETCH_ONLY+= src/regress/lib/libc/timingsafe
 FETCH_ONLY+= src/regress/usr.bin/signify
 
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
@@ -83,16 +86,27 @@ fetch:
 	cvs -qd ${CVSROOT} get -P ${FROM_CVS}
 
 clean:
-	rm -rf signify signify.1 test-results
+	rm -rf signify signify.1 test-results timingsafe explicit_bzero
 
 install: signify
 	install -d ${BINDIR} ${MANDIR}/man1
 	install -Ss -m 755 signify ${BINDIR}
 	install -S -m 644 signify.1 ${MANDIR}/man1
 
+REGRESS_BZ_SRCS=  src/lib/libc/string/explicit_bzero.c
+REGRESS_BZ_SRCS+= src/regress/lib/libc/explicit_bzero/explicit_bzero.c
+explicit_bzero: ${REGRESS_BZ_SRCS}
+	${CC} ${CFLAGS} -o $@ ${REGRESS_BZ_SRCS}
+
+REGRESS_TS_SRCS=  src/lib/libc/string/timingsafe_bcmp.c
+REGRESS_TS_SRCS+= src/lib/libc/string/timingsafe_memcmp.c
+REGRESS_TS_SRCS+= src/regress/lib/libc/timingsafe/timingsafe.c
+timingsafe: ${REGRESS_TS_SRCS}
+	${CC} ${CFLAGS} -o $@ ${REGRESS_TS_SRCS}
+
 check: test
 
-test: signify
+test: signify explicit_bzero timingsafe
 	@sh ./regress.sh
 
 up: check-updates

@@ -1,5 +1,15 @@
 #!/bin/sh
 
+set -e
+
+fail() {
+	echo "Failed at $*!" 1>&2
+	exit 1
+}
+
+./explicit_bzero || fail explicit_bzero
+./timingsafe || fail timingsafe
+
 t="$PWD/test-results"
 s="$PWD/src/regress/usr.bin/signify"
 
@@ -14,10 +24,6 @@ function sha512 { openssl dgst -sha512 "$@" | fixsha; }
 # Use the signify we just compiled, not some other one.
 alias signify="$PWD/signify"
 
-if ( cd "$t" && . "$s/signify.sh" "$s" ); then
-	echo 'All tests passed!'
-	true
-else
-	echo 'TESTS FAILED!'
-	false
-fi
+( cd "$t" && . "$s/signify.sh" "$s" ) || fail signify
+
+echo 'All tests passed!'
