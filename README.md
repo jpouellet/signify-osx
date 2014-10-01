@@ -15,14 +15,15 @@ this "port". It's less than 200 lines, you can do it :)
 
 ### Easy (non-paranoid, 3rd party-trusting) installation:
 
-If you use macports
+If you prefer [MacPorts](https://www.macports.org/):
 ```
 $ sudo port install signify
 ```
 
-If you use homebrew, too bad. The homebrew maintainers
-[didn't want it](https://github.com/Homebrew/homebrew/pull/31196).
-If you want it, go bug them about it.
+If you prefer [Homebrew](http://brew.sh/):
+```
+$ brew install signify-osx
+```
 
 ### Building:
 
