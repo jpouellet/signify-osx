@@ -2,7 +2,7 @@
 /fe25519.c/1.1/Tue Jul 22 00:41:19 2014//
 /mod_ed25519.c/1.1/Wed Jan  8 05:00:01 2014//
 /mod_ge25519.c/1.2/Wed Jan  8 05:51:35 2014//
-/signify.c/1.91/Sun Jul 13 18:59:40 2014//
+/signify.c/1.92/Thu Nov 20 14:51:42 2014//
 /sc25519.c/1.1/Tue Jul 22 00:41:19 2014//
 /smult_curve25519_ref.c/1.1/Tue Jul 22 00:41:19 2014//
 /crypto_api.h/1.1/Tue Jul 22 00:41:19 2014//
