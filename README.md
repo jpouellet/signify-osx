@@ -6,7 +6,7 @@ Previously tested as far back as OS X 10.6.8 with GCC 4.2.1.
 
 Man page at http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1
 
-`src/` is the current (as of December 19th, 2014) result of `make fetch` (cvs get) and `make hash-helpers` (sed).
+`src/` is the result of `make fetch` (cvs get) and `make hash-helpers` (sed) as of the time of the last commit.
 
 If you don't trust me (or github) to not have modified anything in there to
 insert a backdoor (why should you?), but you trust the upstream OpenBSD version,
