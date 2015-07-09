@@ -1,6 +1,6 @@
 ## OS X port of OpenBSD's [signify(1)](http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1)
 
-Latest version tested on OS X 10.10.2 with Apple LLVM 6.0.
+Latest version tested on OS X 10.10.4 with Apple LLVM 6.1.0.
 
 Previously tested as far back as OS X 10.6.8 with GCC 4.2.1.
 
