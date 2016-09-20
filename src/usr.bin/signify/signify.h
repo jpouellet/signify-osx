@@ -1,6 +1,6 @@
-/*	$OpenBSD: timingsafe_bcmp.c,v 1.3 2015/08/31 02:53:57 guenther Exp $	*/
+/* $OpenBSD: signify.h,v 1.1 2016/09/02 16:10:56 espie Exp $ */
 /*
- * Copyright (c) 2010 Damien Miller.  All rights reserved.
+ * Copyright (c) 2016 Marc Espie <espie@openbsd.org>
  *
  * Permission to use, copy, modify, and distribute this software for any
  * purpose with or without fee is hereby granted, provided that the above
@@ -15,16 +15,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#include <string.h>
+/* common interface to signify.c/zsig.c */
+#ifndef signify_h
+#define signify_h
+extern void zverify(const char *, const char *, const char *, const char *);
+extern void zsign(const char *, const char *, const char *);
 
-int
-timingsafe_bcmp(const void *b1, const void *b2, size_t n)
-{
-	const unsigned char *p1 = b1, *p2 = b2;
-	int ret = 0;
+extern void *xmalloc(size_t);
+extern void writeall(int, const void *, size_t, const char *);
+extern int xopen(const char *, int, mode_t);
+extern void *verifyzdata(uint8_t *, unsigned long long,
+    const char *, const char *, const char *);
+extern uint8_t *createsig(const char *, const char *, uint8_t *,
+    unsigned long long);
 
-	for (; n > 0; n--)
-		ret |= *p1++ ^ *p2++;
-	return (ret != 0);
-}
-DEF_WEAK(timingsafe_bcmp);
+
+#endif

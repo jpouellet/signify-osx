@@ -1,4 +1,4 @@
-/*	$OpenBSD: helper.c,v 1.13 2015/01/16 16:48:51 deraadt Exp $ */
+/*	$OpenBSD: helper.c,v 1.15 2015/11/01 03:45:29 guenther Exp $ */
 
 /*
  * Copyright (c) 2000 Poul-Henning Kamp <phk@FreeBSD.org>
@@ -35,7 +35,6 @@
 
 #define MINIMUM(a, b)	(((a) < (b)) ? (a) : (b))
 
-/* ARGSUSED */
 char *
 SHA512End(SHA2_CTX *ctx, char *buf)
 {
@@ -55,6 +54,7 @@ SHA512End(SHA2_CTX *ctx, char *buf)
 	explicit_bzero(digest, sizeof(digest));
 	return (buf);
 }
+DEF_WEAK(SHA512End);
 
 char *
 SHA512FileChunk(const char *filename, char *buf, off_t off, off_t len)
@@ -92,12 +92,14 @@ SHA512FileChunk(const char *filename, char *buf, off_t off, off_t len)
 	errno = save_errno;
 	return (nr < 0 ? NULL : SHA512End(&ctx, buf));
 }
+DEF_WEAK(SHA512FileChunk);
 
 char *
 SHA512File(const char *filename, char *buf)
 {
 	return (SHA512FileChunk(filename, buf, (off_t)0, (off_t)0));
 }
+DEF_WEAK(SHA512File);
 
 char *
 SHA512Data(const u_char *data, size_t len, char *buf)
@@ -108,3 +110,4 @@ SHA512Data(const u_char *data, size_t len, char *buf)
 	SHA512Update(&ctx, data, len);
 	return (SHA512End(&ctx, buf));
 }
+DEF_WEAK(SHA512Data);

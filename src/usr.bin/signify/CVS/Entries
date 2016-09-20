@@ -2,13 +2,15 @@
 /fe25519.c/1.1/Tue Jul 22 00:41:19 2014//
 /mod_ed25519.c/1.1/Wed Jan  8 05:00:01 2014//
 /mod_ge25519.c/1.2/Wed Jan  8 05:51:35 2014//
-/signify.c/1.100/Fri Jan 16 06:16:12 2015//
+/signify.c/1.118/Sat Sep 10 12:23:16 2016//
 /sc25519.c/1.1/Tue Jul 22 00:41:19 2014//
 /smult_curve25519_ref.c/1.1/Tue Jul 22 00:41:19 2014//
+/zsig.c/1.12/Sat Sep 10 12:23:16 2016//
 /crypto_api.h/1.1/Tue Jul 22 00:41:19 2014//
 /fe25519.h/1.1/Tue Jul 22 00:41:19 2014//
 /ge25519.h/1.2/Mon Feb 16 18:26:26 2015//
 /ge25519_base.data/1.1/Tue Jul 22 00:41:19 2014//
 /sc25519.h/1.1/Tue Jul 22 00:41:19 2014//
-/signify.1/1.31/Tue Jul 14 23:30:02 2015//
+/signify.h/1.1/Fri Sep  2 16:10:56 2016//
+/signify.1/1.39/Mon Sep 19 21:15:58 2016//
 D

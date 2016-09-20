@@ -1,4 +1,4 @@
-/explicit_bzero.c/1.3/Sat Jun 21 02:34:26 2014//
-/timingsafe_bcmp.c/1.2/Tue Jun 10 04:17:37 2014//
-/timingsafe_memcmp.c/1.1/Fri Jun 13 02:12:17 2014//
+/explicit_bzero.c/1.4/Mon Aug 31 02:53:57 2015//
+/timingsafe_bcmp.c/1.3/Mon Aug 31 02:53:57 2015//
+/timingsafe_memcmp.c/1.2/Mon Aug 31 02:53:57 2015//
 D

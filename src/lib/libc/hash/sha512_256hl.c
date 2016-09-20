@@ -31,22 +31,22 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <hashinc>
+#include <sha2.h>
 
 #define MINIMUM(a, b)	(((a) < (b)) ? (a) : (b))
 
 char *
-HASHEnd(HASH_CTX *ctx, char *buf)
+SHA512_256End(SHA2_CTX *ctx, char *buf)
 {
 	int i;
-	u_int8_t digest[HASH_DIGEST_LENGTH];
+	u_int8_t digest[SHA512_256_DIGEST_LENGTH];
 	static const char hex[] = "0123456789abcdef";
 
-	if (buf == NULL && (buf = malloc(HASH_DIGEST_STRING_LENGTH)) == NULL)
+	if (buf == NULL && (buf = malloc(SHA512_256_DIGEST_STRING_LENGTH)) == NULL)
 		return (NULL);
 
-	HASHFinal(digest, ctx);
-	for (i = 0; i < HASH_DIGEST_LENGTH; i++) {
+	SHA512_256Final(digest, ctx);
+	for (i = 0; i < SHA512_256_DIGEST_LENGTH; i++) {
 		buf[i + i] = hex[digest[i] >> 4];
 		buf[i + i + 1] = hex[digest[i] & 0x0f];
 	}
@@ -54,18 +54,18 @@ HASHEnd(HASH_CTX *ctx, char *buf)
 	explicit_bzero(digest, sizeof(digest));
 	return (buf);
 }
-DEF_WEAK(HASHEnd);
+DEF_WEAK(SHA512_256End);
 
 char *
-HASHFileChunk(const char *filename, char *buf, off_t off, off_t len)
+SHA512_256FileChunk(const char *filename, char *buf, off_t off, off_t len)
 {
 	struct stat sb;
 	u_char buffer[BUFSIZ];
-	HASH_CTX ctx;
+	SHA2_CTX ctx;
 	int fd, save_errno;
 	ssize_t nr;
 
-	HASHInit(&ctx);
+	SHA512_256Init(&ctx);
 
 	if ((fd = open(filename, O_RDONLY)) < 0)
 		return (NULL);
@@ -82,7 +82,7 @@ HASHFileChunk(const char *filename, char *buf, off_t off, off_t len)
 	}
 
 	while ((nr = read(fd, buffer, MINIMUM(sizeof(buffer), len))) > 0) {
-		HASHUpdate(&ctx, buffer, (size_t)nr);
+		SHA512_256Update(&ctx, buffer, (size_t)nr);
 		if (len > 0 && (len -= nr) == 0)
 			break;
 	}
@@ -90,24 +90,24 @@ HASHFileChunk(const char *filename, char *buf, off_t off, off_t len)
 	save_errno = errno;
 	close(fd);
 	errno = save_errno;
-	return (nr < 0 ? NULL : HASHEnd(&ctx, buf));
+	return (nr < 0 ? NULL : SHA512_256End(&ctx, buf));
 }
-DEF_WEAK(HASHFileChunk);
+DEF_WEAK(SHA512_256FileChunk);
 
 char *
-HASHFile(const char *filename, char *buf)
+SHA512_256File(const char *filename, char *buf)
 {
-	return (HASHFileChunk(filename, buf, (off_t)0, (off_t)0));
+	return (SHA512_256FileChunk(filename, buf, (off_t)0, (off_t)0));
 }
-DEF_WEAK(HASHFile);
+DEF_WEAK(SHA512_256File);
 
 char *
-HASHData(const u_char *data, size_t len, char *buf)
+SHA512_256Data(const u_char *data, size_t len, char *buf)
 {
-	HASH_CTX ctx;
+	SHA2_CTX ctx;
 
-	HASHInit(&ctx);
-	HASHUpdate(&ctx, data, len);
-	return (HASHEnd(&ctx, buf));
+	SHA512_256Init(&ctx);
+	SHA512_256Update(&ctx, data, len);
+	return (SHA512_256End(&ctx, buf));
 }
-DEF_WEAK(HASHData);
+DEF_WEAK(SHA512_256Data);

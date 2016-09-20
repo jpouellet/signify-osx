@@ -12,7 +12,7 @@ SRCS+= src/lib/libc/hash/sha2.c
 SRCS+= src/lib/libc/net/base64.c
 SRCS+= src/lib/libc/string/explicit_bzero.c
 SRCS+= src/lib/libc/string/timingsafe_bcmp.c
-SRCS+= src/lib/libcrypto/crypto/getentropy_osx.c
+SRCS+= src/lib/libcrypto/arc4random/getentropy_osx.c
 SRCS+= src/lib/libutil/bcrypt_pbkdf.c
 SRCS+= src/lib/libutil/ohash.c
 SRCS+= src/usr.bin/signify/crypto_api.c
@@ -22,9 +22,11 @@ SRCS+= src/usr.bin/signify/mod_ge25519.c
 SRCS+= src/usr.bin/signify/signify.c
 SRCS+= src/usr.bin/signify/sc25519.c
 SRCS+= src/usr.bin/signify/smult_curve25519_ref.c
+SRCS+= src/usr.bin/signify/zsig.c
 
 HASH_HELPERS+= src/lib/libc/hash/sha256hl.c
 HASH_HELPERS+= src/lib/libc/hash/sha512hl.c
+HASH_HELPERS+= src/lib/libc/hash/sha512_256hl.c
 
 LOCAL_SRCS+= ${HASH_HELPERS}
 LOCAL_SRCS+= hashaliases.c
@@ -33,7 +35,7 @@ INCL+= src/include/blf.h
 INCL+= src/include/readpassphrase.h
 INCL+= src/include/sha2.h
 INCL+= src/lib/libc/crypt/chacha_private.h
-INCL+= src/lib/libcrypto/crypto/arc4random_osx.h
+INCL+= src/lib/libcrypto/arc4random/arc4random_osx.h
 INCL+= src/lib/libutil/ohash.h
 INCL+= src/lib/libutil/util.h
 INCL+= src/usr.bin/signify/crypto_api.h
@@ -41,6 +43,7 @@ INCL+= src/usr.bin/signify/fe25519.h
 INCL+= src/usr.bin/signify/ge25519.h
 INCL+= src/usr.bin/signify/ge25519_base.data
 INCL+= src/usr.bin/signify/sc25519.h
+INCL+= src/usr.bin/signify/signify.h
 
 MAN= src/usr.bin/signify/signify.1
 
@@ -56,7 +59,9 @@ FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
 CFLAGS+= -Isrc/include -Isrc/lib/libutil -Isrc/usr.bin/signify -I.
 CFLAGS+= -include missing.h
 CFLAGS+= -D_NSIG=NSIG
-CFLAGS+= '-D__weak_alias(a,b)='
+CFLAGS+= '-DDEF_WEAK(a)='
+CFLAGS+= '-DMAKE_CLONE(a,b)='
+CFLAGS+= '-Dpledge(a,b)=(0)'
 CFLAGS+= -Wall -Wextra
 CFLAGS+= -Wno-attributes -Wno-pointer-sign -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
@@ -78,6 +83,11 @@ src/lib/libc/hash/sha512hl.c: src/lib/libc/hash/helper.c
 	sed -e 's/hashinc/sha2.h/g' \
 	    -e 's/HASH/SHA512/g' \
 	    -e 's/SHA[0-9][0-9][0-9]_CTX/SHA2_CTX/g' $< > $@
+
+src/lib/libc/hash/sha512_256hl.c: src/lib/libc/hash/helper.c
+	sed -e 's/hashinc/sha2.h/g' \
+	    -e 's/HASH/SHA512_256/g' \
+	    -e 's/SHA512_256_CTX/SHA2_CTX/g' $< > $@
 
 src/lib/libc/hash/helper.c:
 	$(error Missing source files... Maybe you want to `make fetch`?)
