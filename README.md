@@ -4,7 +4,7 @@ Latest version tested on OS X 10.10.5 with Apple LLVM 7.0.0.
 
 Previously tested as far back as OS X 10.6.8 with GCC 4.2.1.
 
-Man page at http://www.openbsd.org/cgi-bin/man.cgi/OpenBSD-current/man1/signify.1
+Man page at http://man.openbsd.org/signify.1
 
 `src/` is the result of `make fetch` (cvs get) and `make hash-helpers` (sed) as of the time of the last commit.
 
