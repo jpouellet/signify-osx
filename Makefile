@@ -2,8 +2,8 @@ PREFIX= /usr/local
 BINDIR= ${PREFIX}/bin
 MANDIR= ${PREFIX}/share/man
 
-#CVSROOT= anoncvs@anoncvs.openbsd.org:/cvs
-CVSROOT= anoncvs@anoncvs3.usa.openbsd.org:/cvs
+CVSROOT= anoncvs@anoncvs.openbsd.org:/cvs
+#CVSROOT= anoncvs@anoncvs3.usa.openbsd.org:/cvs
 
 ### sources from upstream
 
@@ -93,7 +93,11 @@ src/lib/libc/hash/helper.c:
 	$(error Missing source files... Maybe you want to `make fetch`?)
 
 fetch:
+	# Fetch the sources via CVS.
 	cvs -qd ${CVSROOT} get -P ${FROM_CVS}
+	# Don't keep CVS Root files around. All they do is cause false-positives
+	# for change detection when fetching from different CVS mirrors.
+	find src -name Root -exec rm {} +
 
 install: signify
 	install -d ${BINDIR} ${MANDIR}/man1
