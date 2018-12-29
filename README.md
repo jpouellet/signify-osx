@@ -9,7 +9,7 @@ The latest version was tested on macOS 10.14.2 with Apple LLVM 9.1.0.
 Older versions were previously tested as far back as OS X 10.6.8 with GCC 4.2.1.
 
 Some of the OpenBSD-specific functions used by signify that previously required
-portability shims were introduced in macOS 10.12.(.1), and the corresponding
+portability shims were introduced in macOS 10.12(.1), and the corresponding
 portability shims have been removed to keep the code as lean and easily
 auditable as possible. If you need support for a newer signify on an older
 macOS, feel free to open an issue.
