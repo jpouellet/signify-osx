@@ -1,4 +1,4 @@
-## macOS port of OpenBSD's [signify(1)](http://man.openbsd.org/signify.1)
+## macOS port of OpenBSD's [signify(1)](https://man.openbsd.org/signify.1)
 
 This macOS port of OpenBSD's `signify` utility intentionally tracks upstream
 OpenBSD sources directly, keeping only the smallest portability layer possible,
@@ -14,7 +14,7 @@ portability shims have been removed to keep the code as lean and easily
 auditable as possible. If you need support for a newer signify on an older
 macOS, feel free to open an issue.
 
-Man page at http://man.openbsd.org/signify.1
+Man page at https://man.openbsd.org/signify.1
 
 `src/` is the result of `make fetch` (cvs get) and `make hash-helpers` (sed) as
 of the time of the last commit.
