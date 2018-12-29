@@ -123,7 +123,7 @@ test: signify explicit_bzero
 up: check-updates
 
 check-updates:
-	@(cd src && CVS_RSH=ssh cvs -qn up 2>&1 \
+	@(cd src && CVS_RSH=ssh cvs -qnd ${CVSROOT} up 2>&1 \
 	    | (grep -v '^? ' || echo 'Up to date!'))
 
 
