@@ -1,4 +1,4 @@
-/* $OpenBSD: signify.c,v 1.118 2016/09/10 12:23:16 deraadt Exp $ */
+/* $OpenBSD: signify.c,v 1.128 2017/07/11 23:27:13 tedu Exp $ */
 /*
  * Copyright (c) 2013 Ted Unangst <tedu@openbsd.org>
  *
@@ -244,8 +244,7 @@ writekeyfile(const char *filename, const char *comment, const void *buf,
 	fd = xopen(filename, O_CREAT|oflags|O_NOFOLLOW|O_WRONLY, mode);
 	header = createheader(comment, buf, buflen);
 	writeall(fd, header, strlen(header), filename);
-	explicit_bzero(header, strlen(header));
-	free(header);
+	freezero(header, strlen(header));
 	close(fd);
 }
 
@@ -327,8 +326,8 @@ generate(const char *pubkeyfile, const char *seckeyfile, int rounds,
 	explicit_bzero(digest, sizeof(digest));
 	explicit_bzero(xorkey, sizeof(xorkey));
 
-	if ((nr = snprintf(commentbuf, sizeof(commentbuf), "%s secret key",
-	    comment)) == -1 || nr >= sizeof(commentbuf))
+	nr = snprintf(commentbuf, sizeof(commentbuf), "%s secret key", comment);
+	if (nr == -1 || nr >= sizeof(commentbuf))
 		errx(1, "comment too long");
 	writekeyfile(seckeyfile, commentbuf, &enckey,
 	    sizeof(enckey), O_EXCL, 0600);
@@ -336,11 +335,45 @@ generate(const char *pubkeyfile, const char *seckeyfile, int rounds,
 
 	memcpy(pubkey.pkalg, PKALG, 2);
 	memcpy(pubkey.keynum, keynum, KEYNUMLEN);
-	if ((nr = snprintf(commentbuf, sizeof(commentbuf), "%s public key",
-	    comment)) == -1 || nr >= sizeof(commentbuf))
+	nr = snprintf(commentbuf, sizeof(commentbuf), "%s public key", comment);
+	if (nr == -1 || nr >= sizeof(commentbuf))
 		errx(1, "comment too long");
 	writekeyfile(pubkeyfile, commentbuf, &pubkey,
 	    sizeof(pubkey), O_EXCL, 0666);
+}
+
+static const char *
+check_keyname_compliance(const char *pubkeyfile, const char *seckeyfile)
+{
+	const char *pos;
+	size_t len;
+
+	/* basename may or may not modify input */
+	pos = strrchr(seckeyfile, '/');
+	if (pos != NULL)
+		seckeyfile = pos + 1;
+
+	len = strlen(seckeyfile);
+	if (len < 5) /* ?.key */
+		goto bad;
+	if (strcmp(seckeyfile + len - 4, ".sec") != 0)
+		goto bad;
+	if (pubkeyfile != NULL) {
+		pos = strrchr(pubkeyfile, '/');
+		if (pos != NULL)
+			pubkeyfile = pos + 1;
+
+		if (strlen(pubkeyfile) != len)
+			goto bad;
+		if (strcmp(pubkeyfile + len - 4, ".pub") != 0)
+			goto bad;
+		if (strncmp(pubkeyfile, seckeyfile, len - 4) != 0)
+			goto bad;
+	}
+
+	return seckeyfile;
+bad:
+	errx(1, "please use naming scheme of keyname.pub and keyname.sec");
 }
 
 uint8_t *
@@ -351,7 +384,6 @@ createsig(const char *seckeyfile, const char *msgfile, uint8_t *msg,
 	uint8_t xorkey[sizeof(enckey.seckey)];
 	struct sig sig;
 	char *sighdr;
-	char *secname;
 	uint8_t digest[SHA512_DIGEST_LENGTH];
 	int i, nr, rounds;
 	SHA2_CTX ctx;
@@ -359,16 +391,17 @@ createsig(const char *seckeyfile, const char *msgfile, uint8_t *msg,
 
 	readb64file(seckeyfile, &enckey, sizeof(enckey), comment);
 
-	secname = strstr(seckeyfile, ".sec");
-	if (secname && strlen(secname) == 4) {
-		if ((nr = snprintf(sigcomment, sizeof(sigcomment), VERIFYWITH "%.*s.pub",
-		    (int)strlen(seckeyfile) - 4, seckeyfile)) == -1 || nr >= sizeof(sigcomment))
-			errx(1, "comment too long");
+	if (strcmp(seckeyfile, "-") == 0) {
+ 		nr = snprintf(sigcomment, sizeof(sigcomment),
+		    "signature from %s", comment);
 	} else {
-		if ((nr = snprintf(sigcomment, sizeof(sigcomment), "signature from %s",
-		    comment)) == -1 || nr >= sizeof(sigcomment))
-			errx(1, "comment too long");
+		const char *keyname = check_keyname_compliance(NULL, 
+		    seckeyfile);
+		nr = snprintf(sigcomment, sizeof(sigcomment),
+		    VERIFYWITH "%.*s.pub", (int)strlen(keyname) - 4, keyname);
 	}
+	if (nr == -1 || nr >= sizeof(sigcomment))
+		errx(1, "comment too long");
 
 	if (memcmp(enckey.kdfalg, KDFALG, 2) != 0)
 		errx(1, "unsupported KDF");
@@ -443,44 +476,43 @@ verifymsg(struct pubkey *pubkey, uint8_t *msg, unsigned long long msglen,
 	free(dummybuf);
 }
 
-#ifndef VERIFYONLY
 static void
 check_keytype(const char *pubkeyfile, const char *keytype)
 {
-	size_t len;
-	char *cmp;
-	int slen;
+	const char *p;
+	size_t typelen;
 
-	len = strlen(pubkeyfile);
-	slen = asprintf(&cmp, "-%s.pub", keytype);
-	if (slen < 0)
-		err(1, "asprintf error");
-	if (len < slen)
-		errx(1, "too short");
+	if (!(p = strrchr(pubkeyfile, '-')))
+		goto bad;
+	p++;
+	typelen = strlen(keytype);
+	if (strncmp(p, keytype, typelen) != 0)
+		goto bad;
+	if (strcmp(p + typelen, ".pub") != 0)
+		goto bad;
+	return;
 
-	if (strcmp(pubkeyfile + len - slen, cmp) != 0)
-		errx(1, "wrong keytype");
-	free(cmp);
+bad:
+	errx(1, "incorrect keytype: %s is not %s", pubkeyfile, keytype);
 }
-#endif
 
 static void
 readpubkey(const char *pubkeyfile, struct pubkey *pubkey,
     const char *sigcomment, const char *keytype)
 {
-	const char *safepath = "/etc/signify/";
+	const char *safepath = "/etc/signify";
+	char keypath[1024];
 
 	if (!pubkeyfile) {
 		pubkeyfile = strstr(sigcomment, VERIFYWITH);
-		if (pubkeyfile) {
+		if (pubkeyfile && strchr(pubkeyfile, '/') == NULL) {
 			pubkeyfile += strlen(VERIFYWITH);
-			if (strncmp(pubkeyfile, safepath, strlen(safepath)) != 0 ||
-			    strstr(pubkeyfile, "/../") != NULL)
-				errx(1, "untrusted path %s", pubkeyfile);
-#ifndef VERIFYONLY
 			if (keytype)
 				check_keytype(pubkeyfile, keytype);
-#endif
+			if (snprintf(keypath, sizeof(keypath), "%s/%s",
+			    safepath, pubkeyfile) >= sizeof(keypath))
+				errx(1, "name too long %s", pubkeyfile);
+			pubkeyfile = keypath;
 		} else
 			usage("must specify pubkey");
 	}
@@ -822,8 +854,9 @@ main(int argc, char **argv)
 		int nr;
 		if (strcmp(msgfile, "-") == 0)
 			usage("must specify sigfile with - message");
-		if ((nr = snprintf(sigfilebuf, sizeof(sigfilebuf), "%s.sig",
-		    msgfile)) == -1 || nr >= sizeof(sigfilebuf))
+		nr = snprintf(sigfilebuf, sizeof(sigfilebuf),
+		    "%s.sig", msgfile);
+		if (nr == -1 || nr >= sizeof(sigfilebuf))
 			errx(1, "path too long");
 		sigfile = sigfilebuf;
 	}
@@ -834,6 +867,7 @@ main(int argc, char **argv)
 		/* no pledge */
 		if (!pubkeyfile || !seckeyfile)
 			usage("must specify pubkey and seckey");
+		check_keyname_compliance(pubkeyfile, seckeyfile);
 		generate(pubkeyfile, seckeyfile, rounds, comment);
 		break;
 	case SIGN:

@@ -1,4 +1,4 @@
-/*	$OpenBSD: helper.c,v 1.15 2015/11/01 03:45:29 guenther Exp $ */
+/*	$OpenBSD: helper.c,v 1.17 2017/10/23 14:33:07 millert Exp $ */
 
 /*
  * Copyright (c) 2000 Poul-Henning Kamp <phk@FreeBSD.org>
@@ -71,18 +71,22 @@ HASHFileChunk(const char *filename, char *buf, off_t off, off_t len)
 		return (NULL);
 	if (len == 0) {
 		if (fstat(fd, &sb) == -1) {
+			save_errno = errno;
 			close(fd);
+			errno = save_errno;
 			return (NULL);
 		}
 		len = sb.st_size;
 	}
 	if (off > 0 && lseek(fd, off, SEEK_SET) < 0) {
+		save_errno = errno;
 		close(fd);
+		errno = save_errno;
 		return (NULL);
 	}
 
 	while ((nr = read(fd, buffer, MINIMUM(sizeof(buffer), len))) > 0) {
-		HASHUpdate(&ctx, buffer, (size_t)nr);
+		HASHUpdate(&ctx, buffer, nr);
 		if (len > 0 && (len -= nr) == 0)
 			break;
 	}
@@ -97,7 +101,7 @@ DEF_WEAK(HASHFileChunk);
 char *
 HASHFile(const char *filename, char *buf)
 {
-	return (HASHFileChunk(filename, buf, (off_t)0, (off_t)0));
+	return (HASHFileChunk(filename, buf, 0, 0));
 }
 DEF_WEAK(HASHFile);
 
