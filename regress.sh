@@ -8,7 +8,6 @@ fail() {
 }
 
 ./explicit_bzero || fail explicit_bzero
-./timingsafe || fail timingsafe
 
 t="$PWD/test-results"
 s="$PWD/src/regress/usr.bin/signify"

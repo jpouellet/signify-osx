@@ -5,7 +5,6 @@ MANDIR= ${PREFIX}/share/man
 #CVSROOT= anoncvs@anoncvs.openbsd.org:/cvs
 CVSROOT= anoncvs@anoncvs3.usa.openbsd.org:/cvs
 
-
 ### sources from upstream
 
 SRCS+= src/lib/libc/crypt/blowfish.c
@@ -37,36 +36,10 @@ MAN= src/usr.bin/signify/signify.1
 
 FETCH_ONLY+= src/etc/signify # keys
 FETCH_ONLY+= src/lib/libc/hash/helper.c # src of generated files
-FETCH_ONLY+= src/lib/libc/string/timingsafe_memcmp.c # only used by regress
 FETCH_ONLY+= src/regress/lib/libc/explicit_bzero
-FETCH_ONLY+= src/regress/lib/libc/timingsafe
 FETCH_ONLY+= src/regress/usr.bin/signify
 
-
-### formerly required sorces, now with native equivelants
-
-# used to be for arc4random_buf, but now is available natively
-#SRCS+= src/lib/libc/crypt/arc4random.c
-#INCL+= src/lib/libcrypto/arc4random/arc4random_osx.h
-#INCL+= src/lib/libc/crypt/chacha_private.h
-#CFLAGS+= -I. # was for local arc4random.h
-
-# used to be required since macOS's reaspassphrase() didn't support RPP_STDIN,
-# but "RPP_STDIN was introduced in OS X 10.12" - readpassphrase(3)
-#SRCS+= src/lib/libc/gen/readpassphrase.c
-#INCL+= src/include/readpassphrase.h
-
-# native timingsafe_bcmp introduced in macOS 10.12.1
-#SRCS+= src/lib/libc/string/timingsafe_bcmp.c
-
-# native getentropy introduced in OSX 10.12
-#SRCS+= src/lib/libcrypto/arc4random/getentropy_osx.c
-
-
-### everything we fetch remotely
-
 FROM_CVS+= ${SRCS} ${INCL} ${MAN} ${FETCH_ONLY}
-
 
 ### local files
 
@@ -78,23 +51,18 @@ LOCAL_SRCS+= ${HASH_HELPERS}
 LOCAL_SRCS+= hashaliases.c
 LOCAL_SRCS+= freezero.c
 
-
 ### build cfg
 
 CFLAGS+= -Isrc/include
 CFLAGS+= -Isrc/lib/libutil
-#CFLAGS+= -Isrc/usr.bin/signify
 CFLAGS+= -include missing.h
-#CFLAGS+= -D_NSIG=NSIG
 CFLAGS+= '-DDEF_WEAK(a)=asm("")'
 CFLAGS+= '-DMAKE_CLONE(a,b)=asm("")'
 CFLAGS+= '-Dpledge(a,b)=(0)'
 CFLAGS+= -Wall -Wextra
-#CFLAGS+= -Wno-attributes
 CFLAGS+= -Wno-pointer-sign
 CFLAGS+= -Wno-sign-compare
 CFLAGS+= -Wno-unused-parameter
-
 
 ### targets
 
@@ -140,15 +108,9 @@ REGRESS_BZ_SRCS+= src/regress/lib/libc/explicit_bzero/explicit_bzero.c
 explicit_bzero: ${REGRESS_BZ_SRCS}
 	${CC} ${CFLAGS} -o $@ ${REGRESS_BZ_SRCS}
 
-REGRESS_TS_SRCS=  src/lib/libc/string/timingsafe_memcmp.c
-#REGRESS_TS_SRCS+= src/lib/libc/string/timingsafe_bcmp.c # not since 10.12
-REGRESS_TS_SRCS+= src/regress/lib/libc/timingsafe/timingsafe.c
-timingsafe: ${REGRESS_TS_SRCS}
-	${CC} ${CFLAGS} -o $@ ${REGRESS_TS_SRCS}
-
 check: test
 
-test: signify explicit_bzero timingsafe
+test: signify explicit_bzero
 	@sh ./regress.sh
 
 
@@ -167,4 +129,4 @@ ls:
 	@echo $(FROM_CVS:src/%=%)
 
 clean:
-	rm -rf signify signify.1 test-results timingsafe explicit_bzero
+	rm -rf signify signify.1 test-results explicit_bzero
